@@ -19,9 +19,9 @@ const createClothingItem = (req, res) => {
   }).catch((err) => {
     console.error(err);
     if (err.name === "ValidationError") {
-      return res.status(BAD_REQUEST).send({ message: err.message });
+      return res.status(BAD_REQUEST).send({ message: "Invalid request data" });
     }
-    return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
+    return res.status(INTERNAL_SERVER_ERROR).send({ message: "Internal server error" });
   });
 };
 
@@ -30,7 +30,7 @@ const getClothingItems = (req, res) => {
     .then((items) => res.status(SUCCESS).send(items))
     .catch((err) => {
       console.error(err);
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
+      return res.status(INTERNAL_SERVER_ERROR).send({ message: "Internal server error" });
     });
 }
 
@@ -45,12 +45,12 @@ const deleteClothingItem = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.name === "CastError") {
-        return res.status(BAD_REQUEST).send({ message: err.message });
+        return res.status(BAD_REQUEST).send({ message: "Invalid request data" });
       }
       if (err.name === "DocumentNotFoundError") {
-        return res.status(NOT_FOUND).send({ message: err.message });
+        return res.status(NOT_FOUND).send({ message: "Requested resource not found" });
       }
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
+      return res.status(INTERNAL_SERVER_ERROR).send({ message: "Internal server error" });
     });
 };
 
@@ -65,12 +65,12 @@ const likeItem = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.name === "CastError") {
-        return res.status(BAD_REQUEST).send({ message: err.message });
+        return res.status(BAD_REQUEST).send({ message: "Invalid request data" });
       }
       if (err.name === "DocumentNotFoundError") {
-        return res.status(NOT_FOUND).send({ message: err.message });
+        return res.status(NOT_FOUND).send({ message: "Requested resource not found" });
       }
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
+      return res.status(INTERNAL_SERVER_ERROR).send({ message: "Internal server error" });
     });
 }
 
@@ -85,12 +85,12 @@ const dislikeItem = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.name === "CastError") {
-        return res.status(BAD_REQUEST).send({ message: err.message });
+        return res.status(BAD_REQUEST).send({ message: "Invalid request data" });
       }
       if (err.name === "DocumentNotFoundError") {
-        return res.status(NOT_FOUND).send({ message: err.message });
+        return res.status(NOT_FOUND).send({ message: "Requested resource not found" });
       }
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: err.message });
+      return res.status(INTERNAL_SERVER_ERROR).send({ message: "Internal server error" });
     });
 }
 

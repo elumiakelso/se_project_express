@@ -1,11 +1,16 @@
 const User = require("../models/user");
+const jwt = require('jsonwebtoken');
+const { JWT_SECRET } = require('../utils/config');
+const bcrypt = require('bcryptjs');
 
 const {
   SUCCESS,
   CREATED,
   BAD_REQUEST,
+  UNAUTHORIZED,
   NOT_FOUND,
-  INTERNAL_SERVER_ERROR,
+  CONFLICT,
+  INTERNAL_SERVER_ERROR
 } = require("../utils/errors");
 
 const getUsers = (req, res) => {
@@ -20,22 +25,48 @@ const getUsers = (req, res) => {
 };
 
 const createUser = (req, res) => {
-  const { name, avatar } = req.body;
+  const { name, avatar, email, password } = req.body;
 
-  User.create({ name, avatar })
-    .then((user) => res.status(CREATED).send(user))
+  User.findOne({ email })
+    .then((existingUser) => {
+      if (existingUser) {
+        return Promise.reject({ status: CONFLICT, message: "Email already in use" });
+        // res.status(CONFLICT).send({ message: 'Email already in use' });
+        // return Promise.reject();
+      }
+      return bcrypt.hash(password, 10);
+    })
+    .then((hash) => {
+      return User.create({
+        name,
+        avatar,
+        email,
+        password: hash,
+      });
+    })
+    .then((user) => {
+      const plainUser = user.toObject();
+      delete plainUser.password;
+      return res.status(CREATED).send(plainUser);
+    })
     .catch((err) => {
       console.error(err);
+      if (err.status === CONFLICT) {  // Add this condition to handle the Promise.reject case
+        return res.status(CONFLICT).send({ message: err.message });
+      }
+      if (err.code === 11000) {
+        return res.status(CONFLICT).send({ message: "Email already exists" });
+      }
       if (err.name === "ValidationError") {
         console.log("ValidationError:", err);
         return res.status(BAD_REQUEST).send({ message: "Invalid request data" });
       }
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: "Internal server error" });
+      return res.status(INTERNAL_SERVER_ERROR).send({ message: "An error has occurred on the server" });
     });
 };
 
-const getUser = (req, res) => {
-  const { userId } = req.params;
+const getCurrentUser = (req, res) => {
+  const userId = req.user._id;
 
   User.findById(userId)
     .orFail()
@@ -48,8 +79,52 @@ const getUser = (req, res) => {
       if (err.name === "CastError") {
         return res.status(BAD_REQUEST).send({ message: "Invalid request data" });
       }
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: "Internal server error" });
+      return res.status(INTERNAL_SERVER_ERROR).send({ message: "An error has occurred on the server" });
     });
 };
 
-module.exports = { getUsers, createUser, getUser };
+const updateCurrentUser = (req, res) => {
+  const { name, avatar } = req.body;
+  const userId = req.user._id;
+  User.findByIdAndUpdate(userId, { name, avatar }, { new: true, runValidators: true })
+  .then((user) => {
+    if (!user) {
+      return res.status(NOT_FOUND).send({ message: "Requested resource not found" });
+    }
+    return res.status(SUCCESS).send(user);
+  })
+  .catch((err) => {
+    console.error(err);
+    if (err.name === "ValidationError") {
+      return res.status(BAD_REQUEST).send({ message: "Invalid request data" });
+    }
+    if (err.name === "CastError") {
+      return res.status(BAD_REQUEST).send({ message: "Invalid request data" });
+    }
+    return res.status(INTERNAL_SERVER_ERROR).send({ message: "An error has occurred on the server" });
+  });
+};
+
+const login = (req, res) => {
+  const { email, password } = req.body;
+
+  if (!req.body.email || !req.body.password) {
+    return res.status(BAD_REQUEST).send({ message: "Email and password are required" });
+  }
+
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
+        expiresIn: "7d",
+      });
+      res.send({ token });
+    })
+    .catch((err) => {
+      console.error(err);
+      res
+        .status(UNAUTHORIZED)
+        .send({ message: "Incorrect email or password" });
+    });
+};
+
+module.exports = { getUsers, createUser, getCurrentUser, updateCurrentUser, login };

@@ -5,6 +5,7 @@ const {
   CREATED,
   BAD_REQUEST,
   NOT_FOUND,
+  FORBIDDEN,
   INTERNAL_SERVER_ERROR,
 } = require("../utils/errors");
 
@@ -37,18 +38,28 @@ const getClothingItems = (req, res) => {
 const deleteClothingItem = (req, res) => {
   const { itemId } = req.params;
 
-  clothingItem.findByIdAndDelete(itemId)
+  clothingItem
+    .findById(itemId)
     .orFail()
     .then((item) => {
-      res.status(SUCCESS).send(item);
+      if (item.owner.toString() !== req.user._id) {
+        res.status(FORBIDDEN).send({ message: "You do not have permission to delete this item" });
+        return;
+      }
+      return clothingItem.findByIdAndDelete(itemId);
+    })
+    .then((deletedItem) => {
+      if (deletedItem) {  // only send response if we got here and have a deletedItem
+        res.status(SUCCESS).send({ message: "Item deleted successfully", data: deletedItem });
+      }
     })
     .catch((err) => {
       console.error(err);
       if (err.name === "CastError") {
-        return res.status(BAD_REQUEST).send({ message: "Invalid request data" });
+        return res.status(BAD_REQUEST).send({ message: "Invalid item ID format" });
       }
       if (err.name === "DocumentNotFoundError") {
-        return res.status(NOT_FOUND).send({ message: "Requested resource not found" });
+        return res.status(NOT_FOUND).send({ message: "Item not found" });
       }
       return res.status(INTERNAL_SERVER_ERROR).send({ message: "Internal server error" });
     });

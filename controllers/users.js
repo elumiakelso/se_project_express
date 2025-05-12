@@ -1,7 +1,7 @@
-const User = require("../models/user");
-const jwt = require('jsonwebtoken');
-const { JWT_SECRET } = require('../utils/config');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const User = require("../models/user");
+const { JWT_SECRET } = require('../utils/config');
 
 const {
   SUCCESS,
@@ -30,20 +30,18 @@ const createUser = (req, res) => {
   User.findOne({ email })
     .then((existingUser) => {
       if (existingUser) {
-        return Promise.reject({ status: CONFLICT, message: "Email already in use" });
-        // res.status(CONFLICT).send({ message: 'Email already in use' });
-        // return Promise.reject();
+        const error = new Error("Email already in use");
+        error.status = CONFLICT;
+        return Promise.reject(error);
       }
       return bcrypt.hash(password, 10);
     })
-    .then((hash) => {
-      return User.create({
+    .then((hash) => User.create({
         name,
         avatar,
         email,
         password: hash,
-      });
-    })
+      }))
     .then((user) => {
       const plainUser = user.toObject();
       delete plainUser.password;
@@ -51,7 +49,7 @@ const createUser = (req, res) => {
     })
     .catch((err) => {
       console.error(err);
-      if (err.status === CONFLICT) {  // Add this condition to handle the Promise.reject case
+      if (err.status === CONFLICT) {
         return res.status(CONFLICT).send({ message: err.message });
       }
       if (err.code === 11000) {

@@ -18,6 +18,6 @@ module.exports = (req, res, next) => {
     return res.status(UNAUTHORIZED).send({ message: "Invalid token" });
   }
 
-  req.user = payload; // Add the token payload to the request object
-  next(); // Pass control to the next middleware or route handler
+  req.user = payload;
+  return next();
 };

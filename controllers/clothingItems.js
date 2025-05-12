@@ -43,18 +43,22 @@ const deleteClothingItem = (req, res) => {
     .orFail()
     .then((item) => {
       if (item.owner.toString() !== req.user._id) {
-        res.status(FORBIDDEN).send({ message: "You do not have permission to delete this item" });
-        return;
+        const error = new Error("You do not have permission to delete this item");
+        error.name = "ForbiddenError";
+        throw error;
       }
+    })
+    .then(() => {
       return clothingItem.findByIdAndDelete(itemId);
     })
     .then((deletedItem) => {
-      if (deletedItem) {  // only send response if we got here and have a deletedItem
-        res.status(SUCCESS).send({ message: "Item deleted successfully", data: deletedItem });
-      }
+      res.status(SUCCESS).send({ message: "Item deleted successfully", data: deletedItem });
     })
     .catch((err) => {
       console.error(err);
+      if (err.name === "ForbiddenError") {
+        return res.status(FORBIDDEN).send({ message: "You do not have permission to delete this item" });
+      }
       if (err.name === "CastError") {
         return res.status(BAD_REQUEST).send({ message: "Invalid item ID format" });
       }

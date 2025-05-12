@@ -48,9 +48,7 @@ const deleteClothingItem = (req, res) => {
         throw error;
       }
     })
-    .then(() => {
-      return clothingItem.findByIdAndDelete(itemId);
-    })
+    .then(() => clothingItem.findByIdAndDelete(itemId))
     .then((deletedItem) => {
       res.status(SUCCESS).send({ message: "Item deleted successfully", data: deletedItem });
     })

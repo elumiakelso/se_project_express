@@ -3,16 +3,28 @@ const validator = require("validator");
 const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema({
-  name: { type: String, required: true, minlength: 2, maxlength: 30 },
+  name: {
+    type: String,
+  validate: {
+    validator: function(v) {
+      // If the value is empty or not provided, return true (valid)
+      if (!v || v === '') {
+        return true;
+      }
+      // Otherwise check the length
+      return v.length >= 2 && v.length <= 30;
+    },
+    message: 'Name must be between 2 and 30 characters'
+  }
+  },
   avatar: {
     type: String,
-    required: true,
-    validate: {
-      validator(value) {
-        return validator.isURL(value);
-      },
-      message: "You must enter a valid URL",
+  validate: {
+    validator(value) {
+      return !value || validator.isURL(value);  // Changed to handle undefined/null
     },
+    message: "You must enter a valid URL"
+  }
   },
   email: {
     type: String,
@@ -32,19 +44,22 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-userSchema.statics.findUserByCredentials = function findUserByCredentials(email, password) {
-  return this.findOne({ email }).select('+password')
+userSchema.statics.findUserByCredentials = function findUserByCredentials(
+  email,
+  password
+) {
+  return this.findOne({ email })
+    .select("+password")
     .then((user) => {
       if (!user) {
-        return Promise.reject(new Error('Incorrect email or password'));
+        return Promise.reject(new Error("Incorrect email or password"));
       }
-      return bcrypt.compare(password, user.password)
-        .then((matched) => {
-          if (!matched) {
-            return Promise.reject(new Error('Incorrect email or password'));
-          }
-          return user;
-        });
+      return bcrypt.compare(password, user.password).then((matched) => {
+        if (!matched) {
+          return Promise.reject(new Error("Incorrect email or password"));
+        }
+        return user;
+      });
     });
 };
 

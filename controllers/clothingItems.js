@@ -1,15 +1,21 @@
 const clothingItem = require("../models/clothingItem");
 
 const {
+  BadRequestError,
+  ForbiddenError,
+  NotFoundError,
+} = require("../errors/custom-errors");
+
+const {
   SUCCESS,
   CREATED,
-  BAD_REQUEST,
-  NOT_FOUND,
-  FORBIDDEN,
-  INTERNAL_SERVER_ERROR,
+  // BAD_REQUEST,
+  // NOT_FOUND,
+  // FORBIDDEN,
+  // INTERNAL_SERVER_ERROR,
 } = require("../utils/errors");
 
-const createClothingItem = (req, res) => {
+const createClothingItem = (req, res, next) => {
   console.log(req.body);
 
   const { name, weather, imageUrl } = req.body;
@@ -20,22 +26,22 @@ const createClothingItem = (req, res) => {
   }).catch((err) => {
     console.error(err);
     if (err.name === "ValidationError") {
-      return res.status(BAD_REQUEST).send({ message: "Invalid request data" });
+      return next(new BadRequestError("Invalid request data" ));
     }
-    return res.status(INTERNAL_SERVER_ERROR).send({ message: "Internal server error" });
+    return next(err);
   });
 };
 
-const getClothingItems = (req, res) => {
+const getClothingItems = (req, res, next) => {
   clothingItem.find({})
     .then((items) => res.status(SUCCESS).send(items))
     .catch((err) => {
       console.error(err);
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: "Internal server error" });
+      return next(err);
     });
 }
 
-const deleteClothingItem = (req, res) => {
+const deleteClothingItem = (req, res, next) => {
   const { itemId } = req.params;
 
   clothingItem
@@ -43,31 +49,29 @@ const deleteClothingItem = (req, res) => {
     .orFail()
     .then((item) => {
       if (item.owner.toString() !== req.user._id) {
-        const error = new Error("You do not have permission to delete this item");
-        error.name = "ForbiddenError";
-        throw error;
+        throw new ForbiddenError("You do not have permission to delete this item");
       }
+      return clothingItem.findByIdAndDelete(itemId);
     })
-    .then(() => clothingItem.findByIdAndDelete(itemId))
     .then((deletedItem) => {
       res.status(SUCCESS).send({ message: "Item deleted successfully", data: deletedItem });
     })
     .catch((err) => {
       console.error(err);
       if (err.name === "ForbiddenError") {
-        return res.status(FORBIDDEN).send({ message: "You do not have permission to delete this item" });
+        return next(err);
       }
       if (err.name === "CastError") {
-        return res.status(BAD_REQUEST).send({ message: "Invalid item ID format" });
+        return next(new BadRequestError("Invalid item ID format"));
       }
       if (err.name === "DocumentNotFoundError") {
-        return res.status(NOT_FOUND).send({ message: "Item not found" });
+        return next(new NotFoundError("Item not found"));
       }
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: "Internal server error" });
+      return next(err);
     });
 };
 
-const likeItem = (req, res) => {
+const likeItem = (req, res, next) => {
   const { itemId } = req.params;
 
   clothingItem.findByIdAndUpdate(itemId, { $addToSet: { likes: req.user._id } }, { new: true })
@@ -78,16 +82,16 @@ const likeItem = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.name === "CastError") {
-        return res.status(BAD_REQUEST).send({ message: "Invalid request data" });
+        return next(new BadRequestError("Invalid request data"));
       }
       if (err.name === "DocumentNotFoundError") {
-        return res.status(NOT_FOUND).send({ message: "Requested resource not found" });
+        return next(new NotFoundError ("Requested resource not found"));
       }
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: "Internal server error" });
+      return next(err);
     });
 }
 
-const dislikeItem = (req, res) => {
+const dislikeItem = (req, res, next) => {
   const { itemId } = req.params;
 
   clothingItem.findByIdAndUpdate(itemId, { $pull: { likes: req.user._id } }, { new: true })
@@ -98,12 +102,12 @@ const dislikeItem = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.name === "CastError") {
-        return res.status(BAD_REQUEST).send({ message: "Invalid request data" });
+        return next(new BadRequestError("Invalid request data"));
       }
       if (err.name === "DocumentNotFoundError") {
-        return res.status(NOT_FOUND).send({ message: "Requested resource not found" });
+        return next(new NotFoundError("Requested resource not found"));
       }
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: "Internal server error" });
+      return next(err);
     });
 }
 

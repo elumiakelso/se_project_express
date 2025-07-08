@@ -4,24 +4,29 @@ const User = require("../models/user");
 const { JWT_SECRET } = require('../utils/config');
 
 const {
+  BadRequestError,
+  NotFoundError,
+  ConflictError,
+  UnauthorizedError
+} = require("../errors/custom-errors");
+
+const {
   SUCCESS,
   CREATED,
-  BAD_REQUEST,
-  UNAUTHORIZED,
-  NOT_FOUND,
-  CONFLICT,
-  INTERNAL_SERVER_ERROR
+  // BAD_REQUEST,
+  // UNAUTHORIZED,
+  // NOT_FOUND,
+  // CONFLICT,
+  // INTERNAL_SERVER_ERROR
 } = require("../utils/errors");
 
-const createUser = (req, res) => {
+const createUser = (req, res, next) => {
   const { name, avatar, email, password } = req.body;
 
   User.findOne({ email })
     .then((existingUser) => {
       if (existingUser) {
-        const error = new Error("Email already in use");
-        error.status = CONFLICT;
-        return Promise.reject(error);
+        return next(new ConflictError("Email already in use"));
       }
       return bcrypt.hash(password, 10);
     })
@@ -39,20 +44,19 @@ const createUser = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.status === CONFLICT) {
-        return res.status(CONFLICT).send({ message: err.message });
+        return next(new ConflictError("Email already exists"));
       }
       if (err.code === 11000) {
-        return res.status(CONFLICT).send({ message: "Email already exists" });
+        return next(new ConflictError("Email already exists"));
       }
       if (err.name === "ValidationError") {
-        console.log("ValidationError:", err);
-        return res.status(BAD_REQUEST).send({ message: "Invalid request data" });
+        return next(new BadRequestError("Invalid request data"));
       }
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: "An error has occurred on the server" });
+      return next(err);
     });
 };
 
-const getCurrentUser = (req, res) => {
+const getCurrentUser = (req, res, next) => {
   const userId = req.user._id;
 
   User.findById(userId)
@@ -61,42 +65,42 @@ const getCurrentUser = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.name === "DocumentNotFoundError") {
-        return res.status(NOT_FOUND).send({ message: "Requested resource not found" });
+        return next(new NotFoundError("Requested resource not found"));
       }
       if (err.name === "CastError") {
-        return res.status(BAD_REQUEST).send({ message: "Invalid request data" });
+        return next(new BadRequestError("Invalid request data"));
       }
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: "An error has occurred on the server" });
+      return next(err);
     });
 };
 
-const updateCurrentUser = (req, res) => {
+const updateCurrentUser = (req, res, next) => {
   const { name, avatar } = req.body;
   const userId = req.user._id;
   User.findByIdAndUpdate(userId, { name, avatar }, { new: true, runValidators: true })
   .then((user) => {
     if (!user) {
-      return res.status(NOT_FOUND).send({ message: "Requested resource not found" });
+      return next(new NotFoundError("Requested resource not found"));
     }
     return res.status(SUCCESS).send(user);
   })
   .catch((err) => {
     console.error(err);
     if (err.name === "ValidationError") {
-      return res.status(BAD_REQUEST).send({ message: "Invalid request data" });
+      return next(new BadRequestError("Invalid request data"));
     }
     if (err.name === "CastError") {
-      return res.status(BAD_REQUEST).send({ message: "Invalid request data" });
+      return next(new BadRequestError("Invalid request data"));
     }
-    return res.status(INTERNAL_SERVER_ERROR).send({ message: "An error has occurred on the server" });
+    return next(err);
   });
 };
 
-const login = (req, res) => {
+const login = (req, res, next) => {
   const { email, password } = req.body;
 
   if (!req.body.email || !req.body.password) {
-    return res.status(BAD_REQUEST).send({ message: "Email and password are required" });
+    return next(new BadRequestError("Email and password are required"));
   }
 
   return User.findUserByCredentials(email, password)
@@ -109,9 +113,9 @@ const login = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.message === "Incorrect email or password") {
-        return res.status(UNAUTHORIZED).send({ message: "Incorrect email or password" });
+        return next(new UnauthorizedError("Incorrect email or password"));
       }
-      return res.status(INTERNAL_SERVER_ERROR).send({ message: "Internal server error" });
+      return next(err);
     });
 };
 

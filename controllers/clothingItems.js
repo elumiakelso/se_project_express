@@ -1,10 +1,14 @@
 const clothingItem = require("../models/clothingItem");
 
-const {
-  BadRequestError,
-  ForbiddenError,
-  NotFoundError,
-} = require("../errors/custom-errors");
+// const {
+//   BadRequestError,
+//   ForbiddenError,
+//   NotFoundError,
+// } = require("../errors/custom-errors");
+
+const { BadRequestError } = require("../errors/BadRequestError");
+const { ForbiddenError } = require("../errors/ForbiddenError");
+const { NotFoundError } = require("../errors/NotFoundError");
 
 const {
   SUCCESS,

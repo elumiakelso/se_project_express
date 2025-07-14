@@ -5,6 +5,7 @@ const bcrypt = require("bcryptjs");
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
+    required: true,
   validate: {
     validator: function(v) {
       // If the value is empty or not provided, return true (valid)
@@ -19,6 +20,7 @@ const userSchema = new mongoose.Schema({
   },
   avatar: {
     type: String,
+    required: true,
   validate: {
     validator(value) {
       return !value || validator.isURL(value);  // Changed to handle undefined/null

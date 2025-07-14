@@ -28,17 +28,18 @@ app.use(cors());
 // Enable request logger before routes
 app.use(requestLogger);
 
+
+// Public routes
+app.post("/signin", validateLogin, login);
+app.post("/signup", validateUserBody, createUser);
+app.get("/items", getClothingItems);
+
 // Server crash testing
 app.get('/crash-test', () => {
   setTimeout(() => {
     throw new Error('Server will crash now');
   }, 0);
 });
-
-// Public routes
-app.post("/signin", validateLogin, login);
-app.post("/signup", validateUserBody, createUser);
-app.get("/items", getClothingItems);
 
 // Auth middleware
 app.use(auth);

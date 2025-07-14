@@ -87,12 +87,12 @@ module.exports.validateItemId = celebrate({
   }),
 });
 
-// 5. Validate user IDs
-module.exports.validateUserId = celebrate({
-  params: Joi.object().keys({
-    userId: Joi.string().hex().length(24).messages({
-      "string.hex": 'The "userId" field must be a valid hex string',
-      "string.length": 'The "userId" field must be 24 characters long',
-    }),
-  }),
-});
+// // 5. Validate user IDs
+// module.exports.validateUserId = celebrate({
+//   params: Joi.object().keys({
+//     userId: Joi.string().hex().length(24).messages({
+//       "string.hex": 'The "userId" field must be a valid hex string',
+//       "string.length": 'The "userId" field must be 24 characters long',
+//     }),
+//   }),
+// });

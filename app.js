@@ -3,14 +3,14 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 require('dotenv').config();
 
+const { errors } = require('celebrate');
 const { login, createUser } = require("./controllers/users");
 const auth = require("./middlewares/auth");
 const mainRouter = require("./routes/index");
 const { getClothingItems } = require("./controllers/clothingItems");
-const { errors } = require('celebrate');
 const errorHandler = require("./middlewares/error-handler");
 const { validateLogin, validateUserBody } = require("./middlewares/validation");
-const { requestLogger, errorLogger } = require('./middlewares/logger');
+const { requestLogger, errorLogger, statusLogger } = require('./middlewares/logger');
 
 const app = express();
 const { PORT = 3001 } = process.env;
@@ -18,9 +18,11 @@ const { PORT = 3001 } = process.env;
 mongoose
   .connect("mongodb://127.0.0.1:27017/wtwr_db")
   .then(() => {
-    console.log("Connected to DB");
+    statusLogger.info("Connected to DB");
   })
-  .catch(console.error);
+  .catch((err) => {
+    statusLogger.error(`DB connection error: ${err}`);
+  });
 
 app.use(express.json());
 app.use(cors());
@@ -57,5 +59,5 @@ app.use(errors());
 app.use(errorHandler);
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  statusLogger.info(`Server is running on port ${PORT}`);
 });

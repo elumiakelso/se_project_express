@@ -1,11 +1,5 @@
 const clothingItem = require("../models/clothingItem");
 
-// const {
-//   BadRequestError,
-//   ForbiddenError,
-//   NotFoundError,
-// } = require("../errors/custom-errors");
-
 const { BadRequestError } = require("../errors/BadRequestError");
 const { ForbiddenError } = require("../errors/ForbiddenError");
 const { NotFoundError } = require("../errors/NotFoundError");
@@ -13,10 +7,6 @@ const { NotFoundError } = require("../errors/NotFoundError");
 const {
   SUCCESS,
   CREATED,
-  // BAD_REQUEST,
-  // NOT_FOUND,
-  // FORBIDDEN,
-  // INTERNAL_SERVER_ERROR,
 } = require("../utils/errors");
 
 const createClothingItem = (req, res, next) => {

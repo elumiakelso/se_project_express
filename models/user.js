@@ -6,15 +6,9 @@ const userSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
+    minlength: 2,
+    maxlength: 30,
   validate: {
-    validator: function(v) {
-      // If the value is empty or not provided, return true (valid)
-      if (!v || v === '') {
-        return true;
-      }
-      // Otherwise check the length
-      return v.length >= 2 && v.length <= 30;
-    },
     message: 'Name must be between 2 and 30 characters'
   }
   },

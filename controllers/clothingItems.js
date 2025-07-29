@@ -10,12 +10,9 @@ const {
 } = require("../utils/errors");
 
 const createClothingItem = (req, res, next) => {
-  console.log(req.body);
-
   const { name, weather, imageUrl } = req.body;
 
   clothingItem.create( {name, weather, imageUrl, owner: req.user._id} ).then((item) => {
-    console.log(item);
     res.status(CREATED).send({data:item});
   }).catch((err) => {
     console.error(err);

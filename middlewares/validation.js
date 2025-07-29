@@ -7,7 +7,7 @@ const validateURL = (value, helpers) => {
     return value;
   }
   return helpers.error('string.uri');
-}
+};
 
 // 1. Validate clothing item body when creating an item
 module.exports.validateCardBody = celebrate({

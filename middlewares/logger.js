@@ -31,7 +31,7 @@ const errorLogger = expressWinston.errorLogger({
   format: winston.format.json(),
 });
 
-//status logger
+// status logger
 const statusLogger = winston.createLogger({
   transports: [
     new winston.transports.Console({
